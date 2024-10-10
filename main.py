@@ -34,13 +34,13 @@ rightSensor=ColorSensor(Port.S4)
 robot = DriveBase(left_motor, right_motor, wheel_diameter=55.5, axle_track=104)
 
 threshold=13
-k=120
-ki=0.6
-kd=0#0.02
+k=10
+ki=0
+kd=0
 
 pidParam=PIDParam(k,ki,kd)
 devices=Devices(ev3,leftSensor,rightSensor)
-baseSpeed=30
+baseSpeed=50
 
 LineFollower=LinefollowBeh(devices,pidParam,threshold,baseSpeed)
 

@@ -31,14 +31,7 @@ class LinefollowBeh:
         self.prevtime=time()
 
         #measure error
-        if self.GetReflection(self.leftColorSensor)<self.reflectionThreshold:
-            self.error=-1
-        elif self.GetReflection(self.rightColorSensor)<self.reflectionThreshold:
-            self.error=1
-        else:
-            self.error=0
-
-        error=(self.GetReflection(self.leftColorSensor)-100)-(self.GetReflection(self.rightColorSensor)-100)
+        self.error=(self.GetReflection(self.leftColorSensor))-(self.GetReflection(self.rightColorSensor))
 
         #integral and derivative    
         self.error_int+=self.error*dt
