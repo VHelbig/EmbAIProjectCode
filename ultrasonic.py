@@ -7,6 +7,7 @@ from pybricks.robotics import DriveBase
 from pybricks.tools import wait
 from LineFollowBeh import LinefollowBeh, PIDParam, Devices
 
+# Import the gripper operation function
 from gripper import operate_gripper
 
 # Initialize the EV3 Brick and other components
@@ -32,9 +33,8 @@ LineFollower = LinefollowBeh(devices, pidParam, threshold, baseSpeed)
 
 # Detection variables
 gripper_operated = False 
-distance_history = [1000] * 5 
+distance_history = [1000] * 5  
 
-#Median filter to smooth noise in order to activate the gripper only when we detect a can, we check if the mean of recent readings is between20 and 100 cms
 def median(array):
     sorted_array = sorted(array)
     return sorted_array[len(array) // 2]
@@ -42,27 +42,31 @@ def median(array):
 while True:
     # Line following action
     speed, turning = LineFollower.GetAction()
-    robot.drive(speed, turning) 
+    robot.drive(speed, turning)
 
     # Object detection logic
     distance = ultrasonicSensor.distance()
     distance_history.pop(0)
     distance_history.append(distance)
 
-    # Check if an object is consistently detected within 10 cm
     median_distance = median(distance_history)
-    if not gripper_operated and 20 < median_distance < 100:  # Confirm object in range
-        while median_distance > 10:
+    if not gripper_operated and 5 < median_distance < 10:  
+        # Approach the object until 1 cm away, using median distance
+        while median_distance > 5:
             robot.straight(10)
             distance = ultrasonicSensor.distance()
             distance_history.pop(0)
             distance_history.append(distance)
-            median_distance = median(distance_histoy)
+            median_distance = median(distance_history)
+
+        # Stop and operate the gripper once
         robot.stop()
         operate_gripper()
-        gripper_operated = True 
-        wait(1000)
+        gripper_operated = True
+        wait(2000) 
+
+        # Resume line following
         robot.drive(speed, turning)
 
-    if median_distance > 100:  # Object is out of range consistently
-        gripper_operated = False
+    if median_distance > 50:  # Object is out of range consistently
+        gripper_operated = False  # Ready to detect the next object
