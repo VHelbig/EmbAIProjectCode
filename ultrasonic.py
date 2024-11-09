@@ -7,7 +7,6 @@ from pybricks.robotics import DriveBase
 from pybricks.tools import wait
 from LineFollowBeh import LinefollowBeh, PIDParam, Devices
 
-
 from gripper import operate_gripper
 
 # Initialize the EV3 Brick and other components
@@ -31,55 +30,39 @@ devices = Devices(ev3, leftSensor, rightSensor)
 baseSpeed = 50
 LineFollower = LinefollowBeh(devices, pidParam, threshold, baseSpeed)
 
-# State machine variables
-state = 0  
-prev_distances = [0, 0, 0, 0, 0, 0, 0]
+# Detection variables
 gripper_operated = False 
+distance_history = [1000] * 5 
 
-def Mean(array):
-    return sum(abs(x) for x in array) / len(array)
-
-def Median(array): 
-    sorted_arr = sorted(array)
-    return sorted_arr[len(array) // 2]
+#Median filter to smooth noise in order to activate the gripper only when we detect a can, we check if the mean of recent readings is between20 and 100 cms
+def median(array):
+    sorted_array = sorted(array)
+    return sorted_array[len(array) // 2]
 
 while True:
+    # Line following action
+    speed, turning = LineFollower.GetAction()
+    robot.drive(speed, turning) 
+
+    # Object detection logic
     distance = ultrasonicSensor.distance()
+    distance_history.pop(0)
+    distance_history.append(distance)
 
-    if state == 0:
-        speed, turning = LineFollower.GetAction()
-        robot.drive(speed, turning)
-
-        if Mean(prev_distances) - distance > 200:
-            robot.stop()
-            wait(500)
-            ev3.speaker.beep()
-            state = 1
-        
-    elif state == 1:
-        speed, turning = LineFollower.GetAction()
-        robot.drive(speed, turning)
-
-        if Mean(prev_distances) - distance < 100:
-            state = 2
-            robot.stop()
-            wait(1000)
-        else:
-            state = 0
-
-    elif state == 2:
-        if Mean(prev_distances) - distance > 10:
+    # Check if an object is consistently detected within 10 cm
+    median_distance = median(distance_history)
+    if not gripper_operated and 20 < median_distance < 100:  # Confirm object in range
+        while median_distance > 10:
             robot.straight(10)
-
-        if distance < 100 and not
-gripper_operated: 
-            ev3.speaker.beep()
-            state = 3
-            operate_gripper()  
-            gripper_operated = True
-
-    elif state == 3:
+            distance = ultrasonicSensor.distance()
+            distance_history.pop(0)
+            distance_history.append(distance)
+            median_distance = median(distance_histoy)
         robot.stop()
+        operate_gripper()
+        gripper_operated = True 
+        wait(1000)
+        robot.drive(speed, turning)
 
-    prev_distances[1:] = prev_distances[:-1]
-    prev_distances[0] = ultrasonicSensor.distance()
+    if median_distance > 100:  # Object is out of range consistently
+        gripper_operated = False
