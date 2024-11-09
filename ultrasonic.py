@@ -1,80 +1,66 @@
 #!/usr/bin/env pybricks-micropython
 
 from pybricks.hubs import EV3Brick
-from pybricks.ev3devices import Motor,ColorSensor, UltrasonicSensor
+from pybricks.ev3devices import Motor, ColorSensor, UltrasonicSensor
 from pybricks.parameters import Port
 from pybricks.robotics import DriveBase
 from pybricks.tools import wait
-from time import time
-from LineFollowBeh import LinefollowBeh,PIDParam,Devices
+from LineFollowBeh import LinefollowBeh, PIDParam, Devices
 
-# Initialize the EV3 Brick.
+
+from gripper import operate_gripper
+
+# Initialize the EV3 Brick and other components
 ev3 = EV3Brick()
-
-# Initialize the motors
 left_motor = Motor(Port.D)
 right_motor = Motor(Port.A)
 robot = DriveBase(left_motor, right_motor, wheel_diameter=55.5, axle_track=104)
 
-# Initialize sensors
 leftSensor = ColorSensor(Port.S1)
 rightSensor = ColorSensor(Port.S4)
 ultrasonicSensor = UltrasonicSensor(Port.S2)
 
-# For following the line
+# Line following setup
 threshold = 13
 k = 10
 ki = 0
 kd = 0
 
-pidParam = PIDParam(k,ki,kd)
-devices = Devices(ev3,leftSensor,rightSensor)
+pidParam = PIDParam(k, ki, kd)
+devices = Devices(ev3, leftSensor, rightSensor)
 baseSpeed = 50
+LineFollower = LinefollowBeh(devices, pidParam, threshold, baseSpeed)
 
-LineFollower=LinefollowBeh(devices,pidParam,threshold,baseSpeed)
-
-# For searching the can
-prev_distances = [0,0,0,0,0,0,0]
+# State machine variables
+state = 0  
+prev_distances = [0, 0, 0, 0, 0, 0, 0]
+gripper_operated = False 
 
 def Mean(array):
-    sum = 0
-    for i in range(len(array)):
-        sum += abs(array[i])
-    return sum/len(array)
+    return sum(abs(x) for x in array) / len(array)
 
-def Median(array): # !! fonctionne pour tableau de taille impaire (ici 7)
+def Median(array): 
     sorted_arr = sorted(array)
     return sorted_arr[len(array) // 2]
-    
-state = 0 # 0: Following the can + looking for the can 
-          # 1: Maybe the can
-          # 2: Go to the can
-          # 3: Stop
-
-# tests
-k = 0
 
 while True:
-
     distance = ultrasonicSensor.distance()
 
     if state == 0:
-        (speed, turning) = LineFollower.GetAction()
+        speed, turning = LineFollower.GetAction()
         robot.drive(speed, turning)
 
-        if (Mean(prev_distances) - distance) > 200 :
-            #ev3.screen.print(prev_distances)
-            #ev3.screen.print(distance)
+        if Mean(prev_distances) - distance > 200:
             robot.stop()
             wait(500)
             ev3.speaker.beep()
             state = 1
         
     elif state == 1:
-        (speed, turning) = LineFollower.GetAction()
+        speed, turning = LineFollower.GetAction()
         robot.drive(speed, turning)
 
-        if (Mean(prev_distances) - distance) < 100 :
+        if Mean(prev_distances) - distance < 100:
             state = 2
             robot.stop()
             wait(1000)
@@ -82,12 +68,15 @@ while True:
             state = 0
 
     elif state == 2:
-        if (Mean(prev_distances) - distance) > 10 :
+        if Mean(prev_distances) - distance > 10:
             robot.straight(10)
 
-        if distance < 100 : 
+        if distance < 100 and not
+gripper_operated: 
             ev3.speaker.beep()
-            state = 2
+            state = 3
+            operate_gripper()  
+            gripper_operated = True
 
     elif state == 3:
         robot.stop()
