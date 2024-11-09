@@ -48,14 +48,7 @@ class LinefollowBeh:
         self.prev_actuators[1:]=self.prev_actuators[:-1]
         self.prev_actuators[0]=self.actuators
 
-        #extra_speed=max(100-self.Mean(self.prev_actuators),0)
-        extra_speed=0
-        if self.baseSpeed<0:
-            speed=self.baseSpeed-extra_speed
-        else:
-            speed=self.baseSpeed+extra_speed
-
-        return (speed,self.actuators)
+        return self.actuators
 
     def Mean(self,array):
         sum=0

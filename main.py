@@ -12,12 +12,13 @@ https://education.lego.com/en-us/support/mindstorms-ev3/building-instructions#ro
 """
 
 from pybricks.hubs import EV3Brick
-from pybricks.ev3devices import Motor,ColorSensor
+from pybricks.ev3devices import Motor,ColorSensor, GyroSensor
 from pybricks.parameters import Port, Color
 from pybricks.robotics import DriveBase
 from pybricks.tools import wait
 from time import time
 from LineFollowBeh import LinefollowBeh,PIDParam,Devices
+from RampBeh import RampBeh,RampParam
 
 # Initialize the EV3 Brick.
 ev3 = EV3Brick()
@@ -29,6 +30,8 @@ right_motor = Motor(Port.A)
 #Initialize sensors
 leftSensor=ColorSensor(Port.S1)
 rightSensor=ColorSensor(Port.S4)
+AngleSensor=GyroSensor(Port.S3)
+AngleSensor.reset_angle(0)
 
 # Initialize the drive base.
 robot = DriveBase(left_motor, right_motor, wheel_diameter=55.5, axle_track=104)
@@ -37,15 +40,24 @@ threshold=13
 k=10
 ki=0
 kd=0
+baseSpeed=50
+speedUpFactor=2
+speedDownFactor=0.5
 
 pidParam=PIDParam(k,ki,kd)
 devices=Devices(ev3,leftSensor,rightSensor)
-baseSpeed=50
+rampParams=RampParam(speedUpFactor,speedDownFactor)
+
 
 LineFollower=LinefollowBeh(devices,pidParam,threshold,baseSpeed)
+RampAdjuster=RampBeh(AngleSensor,rampParams,baseSpeed)
+speed=baseSpeed
 
 while True:
-    (speed,turning)=LineFollower.GetAction()
+    turning=LineFollower.GetAction()
+    
+    speed=RampAdjuster.GetAction()
+
     robot.drive(speed,turning)
 
     
