@@ -34,7 +34,7 @@ LineFollower = LinefollowBeh(devices, pidParam, threshold, baseSpeed)
 
 # Detection variables
 gripper_operated = False 
-distance_history = [1000] * 3  
+distance_history = [1000] * 5  
 can_detection_en = False
 timer = StopWatch();
 
@@ -59,10 +59,10 @@ while True:
 
     median_distance = median(distance_history)
 
-    if can_detection_en and timer.time() > 3000
+    if can_detection_en and timer.time() > 500:
         can_detection_en = False
 
-    if can_detection_en and not gripper_operated and 50 < median_distance < 70:
+    if can_detection_en and not gripper_operated and 50 < median_distance < 100:
 
         while median_distance > 50:
             robot.straight(10)
@@ -80,5 +80,5 @@ while True:
         # Resume line following
         robot.drive(speed, turning)
 
-    if median_distance > 70:  # Object is out of range consistently
+    if median_distance > 100:  # Object is out of range consistently
         gripper_operated = False  # Ready to detect the next object
