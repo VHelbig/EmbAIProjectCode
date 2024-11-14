@@ -10,6 +10,7 @@ from pybricks.tools import StopWatch
 
 # Import the gripper operation function
 from gripper import operate_gripper
+# comment
 
 # Initialize the EV3 Brick and other components
 ev3 = EV3Brick()
