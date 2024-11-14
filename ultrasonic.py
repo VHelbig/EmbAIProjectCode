@@ -6,6 +6,7 @@ from pybricks.parameters import Port
 from pybricks.robotics import DriveBase
 from pybricks.tools import wait
 from LineFollowBeh import LinefollowBeh, PIDParam, Devices
+from pybricks.tools import StopWatch
 
 # Import the gripper operation function
 from gripper import operate_gripper
@@ -33,7 +34,14 @@ LineFollower = LinefollowBeh(devices, pidParam, threshold, baseSpeed)
 
 # Detection variables
 gripper_operated = False 
-distance_history = [1000] * 5  
+distance_history = [1000] * 3  
+can_detection_en = False
+timer = StopWatch();
+
+def can_detection_en():
+    can_detection_en = True
+    timer.reset()
+
 
 def median(array):
     sorted_array = sorted(array)
@@ -50,9 +58,13 @@ while True:
     distance_history.append(distance)
 
     median_distance = median(distance_history)
-    if not gripper_operated and 5 < median_distance < 10:  
-        # Approach the object until 1 cm away, using median distance
-        while median_distance > 5:
+
+    if can_detection_en and timer.time() > 3000
+        can_detection_en = False
+
+    if can_detection_en and not gripper_operated and 50 < median_distance < 70:
+
+        while median_distance > 50:
             robot.straight(10)
             distance = ultrasonicSensor.distance()
             distance_history.pop(0)
@@ -68,5 +80,5 @@ while True:
         # Resume line following
         robot.drive(speed, turning)
 
-    if median_distance > 50:  # Object is out of range consistently
+    if median_distance > 70:  # Object is out of range consistently
         gripper_operated = False  # Ready to detect the next object
