@@ -12,14 +12,14 @@ https://education.lego.com/en-us/support/mindstorms-ev3/building-instructions#ro
 """
 
 from pybricks.hubs import EV3Brick
-from pybricks.ev3devices import Motor,ColorSensor, GyroSensor, UltrasonicSensor
-from pybricks.parameters import Port, Color
+from pybricks.ev3devices import Motor
+from pybricks.parameters import Port
 from pybricks.robotics import DriveBase
 from pybricks.tools import wait
-from time import time
-from LineFollowBeh import LinefollowBeh,PIDParam,Devices
+from LineFollowBeh import LinefollowBeh,PIDParam
 from RampBeh import RampBeh,RampParam
 from gripper import operate_gripper
+from SensorReader import SensorReading
 
 # Initialize the EV3 Brick.
 ev3 = EV3Brick()
@@ -29,11 +29,7 @@ left_motor = Motor(Port.D)
 right_motor = Motor(Port.A)
 
 #Initialize sensors
-leftSensor=ColorSensor(Port.S1)
-rightSensor=ColorSensor(Port.S4)
-AngleSensor=GyroSensor(Port.S3)
-AngleSensor.reset_angle(0)
-UltraSensor=UltrasonicSensor(Port.S2)
+SensorReader=SensorReading()
 
 # Initialize the drive base.
 robot = DriveBase(left_motor, right_motor, wheel_diameter=55.5, axle_track=104)
@@ -47,50 +43,52 @@ speedUpFactor=2
 speedDownFactor=0.5
 
 pidParam=PIDParam(k,ki,kd)
-devices=Devices(ev3,leftSensor,rightSensor)
 rampParams=RampParam(speedUpFactor,speedDownFactor)
 
 
-LineFollower=LinefollowBeh(devices,pidParam,threshold,baseSpeed)
-RampAdjuster=RampBeh(AngleSensor,rampParams,baseSpeed)
+LineFollower=LinefollowBeh(pidParam,threshold)
+RampAdjuster=RampBeh(rampParams,baseSpeed)
 speed=baseSpeed
 
-prevdistance=0
-once=False
-def GrabCan():
-    robot.stop()
-    robot.turn(-10)
+
+# once=False
+# def GrabCan():
+#     robot.stop()
+#     robot.turn(-10)
     
-    global once
-    if once==True:
-        return
-    distance=UltraSensor.distance()
-    ev3.speaker.beep(500,200)
-    while(distance>40):
-        robot.drive(speed,0)
-        distance=UltraSensor.distance()
+#     global once
+#     if once==True:
+#         return
+#     distance=UltraSensor.distance()
+#     ev3.speaker.beep(500,200)
+#     while(distance>40):
+#         robot.drive(speed,0)
+#         distance=UltraSensor.distance()
+#     robot.stop()
+#     robot.straight(20)
+#     ev3.speaker.beep(500,100)
+#     operate_gripper()
+#     robot.turn(230)
+#     robot.stop()
+#     once=True
+
+def InvestigateCan():
+    robot.straight(-baseSpeed*0.5)
     robot.stop()
-    robot.straight(20)
-    ev3.speaker.beep(500,100)
-    operate_gripper()
-    robot.turn(230)
-    robot.stop()
-    once=True
+    ev3.speaker.beep()
+    exit()
 
 while True:
-    distance=UltraSensor.distance()
-    d_diff=distance-prevdistance
-    prevdistance=distance
-    
+    SensorReader.GetInput()
 
-    #ev3.screen.print(distance)
-    if distance>90 and distance<200:
-        if d_diff<-10:
-            GrabCan()
+    if SensorReader.endOfLine and not SensorReader.canGrabbed:
+        InvestigateCan()
 
-    turning=LineFollower.GetAction()
+
+
+    turning=LineFollower.GetAction(SensorReader.leftSensorReading,SensorReader.rightSensorReading,SensorReader.dt)
     
-    #speed=RampAdjuster.GetAction()
+    speed=RampAdjuster.GetAction(SensorReader.inclinationAngle)
 
     robot.drive(speed,turning)
 
