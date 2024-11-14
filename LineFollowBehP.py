@@ -1,19 +1,20 @@
 #!/usr/bin/env pybricks-micropython
 
-from pybricks.hubs import EV3Brick
-from pybricks.ev3devices import Motor,ColorSensor
 from time import time
 
 class LinefollowBeh:
 
-    def __init__(self,devices,pidParam,reflectionThreshold,baseSpeed) -> None:
-        self.ev3=devices.ev3
+    def __init__(self,devices,pidParam,rampParams,reflectionThreshold) -> None:
         self.leftColorSensor=devices.leftColorSensor
         self.rightColorSensor=devices.rightColorSensor
+        self.angleSensor=devices.angleSensor
+
         self.reflectionThreshold=reflectionThreshold
+
         self.kp=pidParam.kp
         self.ki=pidParam.ki
         self.kd=pidParam.kd
+
         self.int_sat_value=2
         self.prevtime=time()-0.001
         self.error=0
@@ -22,8 +23,10 @@ class LinefollowBeh:
         self.actuators=0
         self.error_int=0
         self.error_dev=0
-        self.baseSpeed=baseSpeed
 
+        self.speedUpFactor=rampParams.speedUpFactor
+        self.speedDownFactor=rampParams.speedDownFactor
+        self.baseSpeed=rampParams.baseSpeed
 
     def GetAction(self):
         #get time diff
@@ -48,23 +51,25 @@ class LinefollowBeh:
         self.prev_actuators[1:]=self.prev_actuators[:-1]
         self.prev_actuators[0]=self.actuators
 
-        return self.actuators
-
-    def Mean(self,array):
-        sum=0
-        for i in range(len(array)):
-            sum+=abs(array[i])
-        return sum/len(array)
+        angle=self.angleSensor.angle()
+        if angle<-20:
+            speed=self.baseSpeed*self.speedUpFactor
+        elif angle >20:
+            speed=self.baseSpeed*self.speedDownFactor
+        else:
+            speed=self.baseSpeed
+        return (speed, self.actuators)
     
     def GetReflection(self,sensor):
         return sensor.reflection()
 
 
 class Devices():
-    def __init__(self,ev3,leftColorSensor,rightColorSensor) -> None:
-        self.ev3=ev3
+    def __init__(self,leftColorSensor,rightColorSensor,angleSensor) -> None:
         self.leftColorSensor=leftColorSensor
         self.rightColorSensor=rightColorSensor
+        self.angleSensor=angleSensor
+        self.angleSensor.reset_angle(0)
 
 class PIDParam():
     def __init__(self,kp,ki,kd) -> None:
@@ -72,10 +77,28 @@ class PIDParam():
         self.ki=ki
         self.kd=kd
 
+class RampParam():
+    def __init__(self,speedUpFactor,speedDownFactor,baseSpeed) -> None:
+        self.speedUpFactor=speedUpFactor
+        self.speedDownFactor=speedDownFactor
+        self.baseSpeed=baseSpeed
+
 
 if __name__=="__main__":
-    from pybricks.parameters import Port,Color
-    pidP=PIDParam(60,1,0.02)
-    devices=Devices(EV3Brick(),ColorSensor(Port.S1),ColorSensor(Port.S2))
-    linfollower=LinefollowBeh(devices,pidP,10,60)
-    print(linfollower.GetAction())
+    from pybricks.hubs import EV3Brick
+    from pybricks.ev3devices import Motor, ColorSensor, GyroSensor
+    from pybricks.parameters import Port
+    from pybricks.robotics import DriveBase
+    pidP=PIDParam(10,0,0)
+    rampP=RampParam(2,0.5,50)
+    devices=Devices(ColorSensor(Port.S1),ColorSensor(Port.S4),GyroSensor(Port.S3))
+    linfollower=LinefollowBeh(devices,pidP,rampP,13)
+
+    ev3 = EV3Brick()
+    left_motor = Motor(Port.D)
+    right_motor = Motor(Port.A)
+    robot = DriveBase(left_motor, right_motor, wheel_diameter=55.5, axle_track=104)
+
+    while True:
+        speed, turning = linfollower.GetAction()
+        robot.drive(speed, turning)

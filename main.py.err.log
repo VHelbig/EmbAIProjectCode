@@ -1,4 +1,4 @@
 Traceback (most recent call last):
-  File "/home/robot/Project_code/main.py", line 85, in <module>
-  File "/home/robot/Project_code/main.py", line 61, in GrabCan
-NameError: local variable referenced before assignment
+  File "/home/robot/EmbAIProjectCode/main.py", line 59, in <module>
+  File "/home/robot/EmbAIProjectCode/GrabCanBeh.py", line 8, in GoToCan
+ZeroDivisionError: divide by zero

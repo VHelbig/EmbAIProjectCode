@@ -1,25 +1,12 @@
 #!/usr/bin/env pybricks-micropython
 
-"""
-Example LEGO® MINDSTORMS® EV3 Robot Educator Driving Base Program
------------------------------------------------------------------
-
-This program requires LEGO® EV3 MicroPython v2.0.
-Download: https://education.lego.com/en-us/support/mindstorms-ev3/python-for-ev3
-
-Building instructions can be found at:
-https://education.lego.com/en-us/support/mindstorms-ev3/building-instructions#robot
-"""
-
 from pybricks.hubs import EV3Brick
-from pybricks.ev3devices import Motor,ColorSensor, GyroSensor, UltrasonicSensor
-from pybricks.parameters import Port, Color
+from pybricks.ev3devices import Motor, ColorSensor, GyroSensor, UltrasonicSensor
+from pybricks.parameters import Port
 from pybricks.robotics import DriveBase
 from pybricks.tools import wait
-from time import time
-from LineFollowBeh import LinefollowBeh,PIDParam,Devices
-from RampBeh import RampBeh,RampParam
-from gripper import operate_gripper
+from LineFollowBehP import LinefollowBeh,PIDParam,Devices, RampParam
+from GrabCanBeh import GoToCan
 
 # Initialize the EV3 Brick.
 ev3 = EV3Brick()
@@ -27,17 +14,20 @@ ev3 = EV3Brick()
 # Initialize the motors
 left_motor = Motor(Port.D)
 right_motor = Motor(Port.A)
+gripper_motor = Motor(Port.B)
 
 #Initialize sensors
 leftSensor=ColorSensor(Port.S1)
 rightSensor=ColorSensor(Port.S4)
-AngleSensor=GyroSensor(Port.S3)
-AngleSensor.reset_angle(0)
-UltraSensor=UltrasonicSensor(Port.S2)
+angleSensor=GyroSensor(Port.S3)
+angleSensor.reset_angle(0)
+ultraSensor=UltrasonicSensor(Port.S2)
 
 # Initialize the drive base.
 robot = DriveBase(left_motor, right_motor, wheel_diameter=55.5, axle_track=104)
 
+
+# Settings (line following + ramp)
 threshold=13
 k=10
 ki=0
@@ -46,17 +36,43 @@ baseSpeed=50
 speedUpFactor=2
 speedDownFactor=0.5
 
+
 pidParam=PIDParam(k,ki,kd)
-devices=Devices(ev3,leftSensor,rightSensor)
-rampParams=RampParam(speedUpFactor,speedDownFactor)
+rampParams=RampParam(speedUpFactor,speedDownFactor,baseSpeed)
+devices=Devices(leftSensor,rightSensor,angleSensor)
 
+LineFollower=LinefollowBeh(devices,pidParam,rampParams,threshold)
 
-LineFollower=LinefollowBeh(devices,pidParam,threshold,baseSpeed)
-RampAdjuster=RampBeh(AngleSensor,rampParams,baseSpeed)
+# Variables
 speed=baseSpeed
-
 prevdistance=0
-once=False
+
+while True:
+
+    distance=ultraSensor.distance()
+    d_diff=distance-prevdistance
+    prevdistance=distance
+
+    if d_diff<-100:
+        ev3.speaker.beep()
+        if prevdistance<1500:
+            robot.stop()
+            wait(1000)
+            sens=turning/abs(turning)
+            #"robot.turn(sens*5)
+            if abs(ultraSensor.distance() - prevdistance) < 10:
+                ev3.speaker.beep()
+                robot.turn(-sens*5)
+                robot.stop()
+                wait(1000)
+                GoToCan(robot,ultraSensor,gripper_motor,speed,distance)
+
+
+    speed, turning = LineFollower.GetAction()
+    robot.drive(speed, turning)
+
+"""
+
 def GrabCan():
     robot.stop()
     robot.turn(-10)
@@ -77,25 +93,4 @@ def GrabCan():
     robot.stop()
     once=True
 
-while True:
-    distance=UltraSensor.distance()
-    d_diff=distance-prevdistance
-    prevdistance=distance
-    
-
-    #ev3.screen.print(distance)
-    if distance>90 and distance<200:
-        if d_diff<-10:
-            GrabCan()
-
-    turning=LineFollower.GetAction()
-    
-    #speed=RampAdjuster.GetAction()
-
-    robot.drive(speed,turning)
-
-
-
-
-    
-
+"""
