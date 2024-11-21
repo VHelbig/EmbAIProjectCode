@@ -9,10 +9,10 @@ class RampBeh:
         self.speedDownFactor=rampParams.speedDownFactor
         self.baseSpeed=baseSpeed
 
-    def GetAction(self,angle):
-        if angle<-10:
+    def GetAction(self,anglularVelo):
+        if anglularVelo<-25:
             speed=self.baseSpeed*self.speedUpFactor
-        elif angle >10:
+        elif anglularVelo >25:
             speed=self.baseSpeed*self.speedDownFactor
         else:
             speed=self.baseSpeed

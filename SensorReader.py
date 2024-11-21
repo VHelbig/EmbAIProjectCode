@@ -18,6 +18,7 @@ class SensorReading():
         self.canGrabbed=False
         self.prevdistance=0
         self.prevtime=time()
+        self.lastDistanceTime=0
         self.whiteCounter=0
 
         #initialize outputs
@@ -29,6 +30,7 @@ class SensorReading():
         self.distance=0
         self.endOfLine=False
         self.potentialCan=False
+        self.justUpRamp=False
 
     def GetInput(self):
         #Time related
@@ -47,11 +49,24 @@ class SensorReading():
         self.prevdistance=self.distance
         self.distance=self.UltraSensor.distance()
 
+        #just passed angle
+        # if self.inclinationAngle<-25:
+        #     self.lastAngleTime=self.time
+        # if self.time-self.lastAngleTime<2:
+        #     self.justUpRamp=True
+        # else:
+        #     self.justUpRamp=False
+        if self.distance>1000:
+            self.lastDistanceTime=self.time
+        if self.time-self.lastDistanceTime<9:
+            self.justUpRamp=True
+        else:
+            self.justUpRamp=False
+
         #end of Line
-        if abs(self.inclinationAngle)<10:
+        if not self.justUpRamp:
             if self.leftSensorReading*0.5+self.rightSensorReading*0.5 > 19:
-                self.ev3.speaker.beep()
-                if self.whiteCounter>0.5:
+                if self.whiteCounter>1:
                     self.endOfLine=True
                 else:
                     self.whiteCounter+=self.dt
@@ -62,7 +77,7 @@ class SensorReading():
         #potential Can
         d_diff=self.distance-self.prevdistance
         if self.distance>90 and self.distance<200:
-            if d_diff<-10:
+            if d_diff<-10 and d_diff>-150:
                 self.potentialCan=True
             else:
                 self.potentialCan=False

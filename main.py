@@ -20,6 +20,7 @@ from LineFollowBeh import LinefollowBeh,PIDParam
 from RampBeh import RampBeh,RampParam
 from gripper import operate_gripper
 from SensorReader import SensorReading
+from CanRelatedBeh import CanRelatedBeh
 
 # Initialize the EV3 Brick.
 ev3 = EV3Brick()
@@ -48,6 +49,7 @@ rampParams=RampParam(speedUpFactor,speedDownFactor)
 
 LineFollower=LinefollowBeh(pidParam,threshold)
 RampAdjuster=RampBeh(rampParams,baseSpeed)
+CanRelatedBehs=CanRelatedBeh(robot,SensorReader,baseSpeed)
 speed=baseSpeed
 
 
@@ -72,23 +74,25 @@ speed=baseSpeed
 #     robot.stop()
 #     once=True
 
-def InvestigateCan():
-    robot.straight(-baseSpeed*0.5)
-    robot.stop()
-    ev3.speaker.beep()
-    exit()
+prevTurning=0
 
 while True:
     SensorReader.GetInput()
 
     if SensorReader.endOfLine and not SensorReader.canGrabbed:
-        InvestigateCan()
+        ev3.speaker.beep(SensorReader.distance,100)
+        CanRelatedBehs.SearchCan()
 
+
+    # if SensorReader.potentialCan and not SensorReader.canGrabbed:
+    #     ev3.speaker.beep(700,100)
+    #     CanRelatedBehs.GrabCan(prevTurning)
 
 
     turning=LineFollower.GetAction(SensorReader.leftSensorReading,SensorReader.rightSensorReading,SensorReader.dt)
+    prevTurning=turning
     
-    speed=RampAdjuster.GetAction(SensorReader.inclinationAngle)
+    # speed=RampAdjuster.GetAction(SensorReader.inclinationAngle)
 
     robot.drive(speed,turning)
 

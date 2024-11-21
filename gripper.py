@@ -13,5 +13,5 @@ def operate_gripper():
     wait(2000)  
 
     # Close the gripper
-    gripper_motor.run_angle(500, 2750, Stop.HOLD)  
+    gripper_motor.run_angle(500, 2450, Stop.HOLD)  
     wait(2000)  
