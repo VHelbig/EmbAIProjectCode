@@ -15,9 +15,11 @@ class CanRelatedBeh():
         self.robot.stop()    
         d_diff=0
         prevdistance=self.SensorReader.UltraSensor.distance()
-        while(d_diff>-10):
+        condition=True
+        while(condition):
             distance=self.SensorReader.UltraSensor.distance()
             d_diff=distance-prevdistance
+            condition=(d_diff>-20 and d_diff>-200) and distance <150
             prevdistance=distance
             self.robot.turn(-1)
         self.GrabCan(-1)
@@ -32,6 +34,6 @@ class CanRelatedBeh():
             distance=self.SensorReader.UltraSensor.distance()
         self.robot.straight(20)
         operate_gripper()
-        self.robot.turn(230)
+        self.robot.turn(250)
         self.robot.stop()
         self.SensorReader.canGrabbed=True

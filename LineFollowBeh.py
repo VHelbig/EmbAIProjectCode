@@ -18,6 +18,7 @@ class LinefollowBeh:
         self.actuators=0
         self.error_int=0
         self.error_dev=0
+        self.previous_devs=[0,0,0,0,0,0]
 
 
     def GetAction(self,leftSensorReading,rightSensorReading,dt):
@@ -31,6 +32,11 @@ class LinefollowBeh:
                 self.error_int=-self.int_sat_value
             else:
                 self.error_int=self.int_sat_value
+
+        # for i in range(1,len(self.previous_devs)):
+        #     self.previous_devs[i]=self.previous_devs[i-1]
+        # self.previous_devs[0]=(self.error-self.preverror)/dt
+        # self.error_dev=self.Mean(self.previous_devs)
 
         self.error_dev=(self.error-self.preverror)/dt
 

@@ -39,7 +39,7 @@ threshold=13
 k=10
 ki=0
 kd=0
-baseSpeed=50
+baseSpeed=60
 speedUpFactor=2
 speedDownFactor=0.5
 
@@ -80,12 +80,12 @@ while True:
     SensorReader.GetInput()
 
     if SensorReader.endOfLine and not SensorReader.canGrabbed:
-        ev3.speaker.beep(SensorReader.distance,100)
+        # ev3.speaker.beep(SensorReader.distance,100)
         CanRelatedBehs.SearchCan()
 
 
-    # if SensorReader.potentialCan and not SensorReader.canGrabbed:
-    #     ev3.speaker.beep(700,100)
+    # # if SensorReader.potentialCan and not SensorReader.canGrabbed:
+    #     # ev3.speaker.beep(700,100)
     #     CanRelatedBehs.GrabCan(prevTurning)
 
 
@@ -93,8 +93,11 @@ while True:
     prevTurning=turning
     
     # speed=RampAdjuster.GetAction(SensorReader.inclinationAngle)
+    # # if abs(SensorReader.inclinationAngle)>0:
+    # #     ev3.speaker.beep(abs(SensorReader.inclinationAngle)*10,100)
 
     robot.drive(speed,turning)
+    #ev3.screen.print(SensorReader.inclinationAngle)
 
 
 
